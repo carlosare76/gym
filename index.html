@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rutina Gym — Déficit Calórico</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0ede8;
+    --surface: #faf9f7;
+    --surface2: #f0ede8;
+    --border: rgba(0,0,0,0.1);
+    --text: #1a1916;
+    --muted: #7a7670;
+    --blue: #1a5fa8;
+    --blue-bg: #e8f0fb;
+    --green: #0f6e52;
+    --green-bg: #e0f2ea;
+    --purple: #4f42b5;
+    --purple-bg: #eceafe;
+    --amber: #92560a;
+    --amber-bg: #fdf0da;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem 1.25rem; }
+
+  .header { margin-bottom: 2rem; }
+  .header h1 { font-size: 22px; font-weight: 500; letter-spacing: -0.3px; margin-bottom: 4px; }
+  .header p { font-size: 13px; color: var(--muted); }
+
+  /* Peso guide banner */
+  .peso-guide { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.75rem; }
+  .peso-guide-title { font-size: 13px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+  .peso-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+  .peso-col { border-radius: var(--radius-sm); padding: 12px; }
+  .peso-col.heavy { background: var(--blue-bg); border-left: 3px solid var(--blue); }
+  .peso-col.light { background: var(--green-bg); border-left: 3px solid var(--green); }
+  .peso-col-title { font-size: 12px; font-weight: 500; margin-bottom: 4px; }
+  .peso-col.heavy .peso-col-title { color: var(--blue); }
+  .peso-col.light .peso-col-title { color: var(--green); }
+  .peso-col-desc { font-size: 12px; line-height: 1.6; color: var(--text); }
+  .peso-rule { background: var(--amber-bg); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12px; line-height: 1.6; color: var(--amber); border-left: 3px solid var(--amber); }
+  .peso-rule strong { font-weight: 500; }
+
+  /* Week nav */
+  .week-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 1.5rem; scrollbar-width: none; }
+  .week-scroll::-webkit-scrollbar { display: none; }
+  .day-btn { flex-shrink: 0; padding: 8px 16px; border-radius: 99px; border: 0.5px solid var(--border); background: var(--surface); color: var(--muted); font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .day-btn:hover { border-color: rgba(0,0,0,0.2); color: var(--text); }
+  .day-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .day-btn .badge { display: inline-block; font-size: 10px; background: #faeeda; color: #854f0b; padding: 1px 5px; border-radius: 99px; margin-left: 4px; vertical-align: middle; }
+  .day-btn.active .badge { background: rgba(255,255,255,0.2); color: #fff; }
+
+  /* Session tabs */
+  .session-tabs { display: flex; gap: 8px; margin-bottom: 1.25rem; }
+  .stab { padding: 6px 16px; border-radius: 99px; font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; border: 0.5px solid var(--border); background: var(--surface); color: var(--muted); transition: all 0.15s; }
+  .stab.am { background: var(--blue-bg); color: var(--blue); border-color: var(--blue); font-weight: 500; }
+  .stab.pm { background: var(--purple-bg); color: var(--purple); border-color: var(--purple); font-weight: 500; }
+
+  /* Session block */
+  .session-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .session-header { padding: 1rem 1.25rem; border-bottom: 0.5px solid var(--border); }
+  .session-title { font-size: 15px; font-weight: 500; }
+  .session-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  .section-block { padding: 0 1.25rem; }
+  .section-label { display: inline-flex; align-items: center; font-size: 11px; font-weight: 500; letter-spacing: 0.04em; padding: 3px 10px; border-radius: 99px; margin: 14px 0 8px; }
+  .sl-blue { background: var(--blue-bg); color: var(--blue); }
+  .sl-green { background: var(--green-bg); color: var(--green); }
+  .sl-purple { background: var(--purple-bg); color: var(--purple); }
+  .sl-gray { background: var(--surface2); color: var(--muted); }
+
+  .ex-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 0.5px solid var(--border); gap: 10px; }
+  .ex-row:last-child { border-bottom: none; }
+  .ex-name { font-size: 13px; line-height: 1.4; }
+  .ex-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .ex-sets { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .peso-tag { font-size: 10px; padding: 2px 7px; border-radius: 99px; white-space: nowrap; }
+  .pt-heavy { background: var(--blue-bg); color: var(--blue); }
+  .pt-light { background: var(--green-bg); color: var(--green); }
+  .pt-cardio { background: var(--green-bg); color: var(--green); }
+  .pt-body { background: var(--surface2); color: var(--muted); }
+
+  .section-pad-bottom { padding-bottom: 1rem; }
+
+  /* Tips */
+  .tips-title { font-size: 14px; font-weight: 500; margin: 1.75rem 0 10px; }
+  .tips-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tip { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 12px; }
+  .tip-t { font-size: 11px; font-weight: 500; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .tip-d { font-size: 12px; line-height: 1.6; }
+
+  @media(max-width:480px){ .peso-cols { grid-template-columns:1fr; } .tips-grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Rutina Semanal</h1>
+  <p>Déficit calórico · Intermedio · Elíptica · Dobles mar–jue</p>
+</div>
+
+<!-- PESO GUIDE -->
+<div class="peso-guide">
+  <div class="peso-guide-title">¿Cuánto peso debo usar?</div>
+  <div class="peso-cols">
+    <div class="peso-col heavy">
+      <div class="peso-col-title">Peso alto · pocas reps (6–10)</div>
+      <div class="peso-col-desc">Para ganar o mantener fuerza. El músculo falla cerca de la última repetición. Usa esto en ejercicios compuestos: sentadilla, press de banca, peso muerto, jalón.</div>
+    </div>
+    <div class="peso-col light">
+      <div class="peso-col-title">Peso moderado · más reps (12–15)</div>
+      <div class="peso-col-desc">Para definir y tonificar sin sobrecargar el cuerpo en déficit. Más tiempo bajo tensión, más quema calórica. Ideal para ejercicios de aislamiento y sesiones de tarde.</div>
+    </div>
+  </div>
+  <div class="peso-rule">
+    <strong>Regla práctica en déficit calórico:</strong> Usa ejercicios compuestos con peso desafiante (8–10 reps) para conservar músculo, y los ejercicios de aislamiento con peso moderado (12–15 reps) para volumen y quema. Si en las últimas 2 reps no sientes esfuerzo, el peso está muy bajo. Si no puedes completar las series con buena técnica, bájalo.
+  </div>
+</div>
+
+<!-- WEEK NAV -->
+<div class="week-scroll" id="weekScroll">
+  <button class="day-btn active" onclick="showDay(0)">Lunes</button>
+  <button class="day-btn" onclick="showDay(1)">Martes <span class="badge">2×</span></button>
+  <button class="day-btn" onclick="showDay(2)">Miércoles <span class="badge">2×</span></button>
+  <button class="day-btn" onclick="showDay(3)">Jueves <span class="badge">2×</span></button>
+  <button class="day-btn" onclick="showDay(4)">Viernes</button>
+  <button class="day-btn" onclick="showDay(5)">Sábado</button>
+</div>
+
+<!-- SESSION TABS (solo días dobles) -->
+<div class="session-tabs" id="sessionTabs" style="display:none"></div>
+
+<!-- DETAIL -->
+<div class="session-card" id="sessionCard"></div>
+
+<!-- TIPS -->
+<div class="tips-title">Notas para el déficit</div>
+<div class="tips-grid">
+  <div class="tip"><div class="tip-t">Sesiones dobles</div><div class="tip-d">Deja 5–6 h entre sesiones. Come proteína entre ambas: huevos, yogur griego o pollo.</div></div>
+  <div class="tip"><div class="tip-t">Elíptica zona 2</div><div class="tip-d">60–70% de tu frecuencia cardiaca máxima quema más grasa que ir a tope. No tienes que sufrir.</div></div>
+  <div class="tip"><div class="tip-t">Grupos distintos</div><div class="tip-d">Separar grupos entre mañana y tarde permite rendir bien en ambas sin afectar la recuperación.</div></div>
+  <div class="tip"><div class="tip-t">Proteína diaria</div><div class="tip-d">Con este volumen apunta a 1.8–2 g por kg de peso para proteger masa muscular en déficit.</div></div>
+</div>
+
+<script>
+// H = peso alto/fuerza, L = peso moderado/volumen, C = cardio, B = peso corporal
+const days = [
+  { name:"Lunes", sessions:[
+    { label:"Tarde — Pecho + Tríceps", time:"~1.5–2 h · tarde", type:"tarde", sections:[
+      { label:"Calentamiento · 8 min", cls:"sl-gray", items:[
+        {n:"Elíptica suave", s:"8 min · nivel 3", t:"C"},
+      ]},
+      { label:"Pecho", cls:"sl-blue", items:[
+        {n:"Press de banca con barra", s:"4 × 8–10", t:"H"},
+        {n:"Press inclinado con mancuernas", s:"3 × 10–12", t:"H"},
+        {n:"Aperturas en peck deck", s:"3 × 12–15", t:"L"},
+      ]},
+      { label:"Tríceps", cls:"sl-blue", items:[
+        {n:"Fondos en paralelas", s:"3 × 10–12", t:"B"},
+        {n:"Extensiones en polea alta", s:"3 × 12–15", t:"L"},
+        {n:"Press francés con barra EZ", s:"3 × 10–12", t:"L"},
+      ]},
+      { label:"Cardio final · 20 min", cls:"sl-green", items:[
+        {n:"Elíptica — ritmo moderado", s:"20 min · nivel 6–8", t:"C"},
+      ]},
+    ]}
+  ]},
+  { name:"Martes", sessions:[
+    { label:"Mañana — Espalda + Bíceps", time:"6:00–7:30 am", type:"mañana", sections:[
+      { label:"Calentamiento · 8 min", cls:"sl-gray", items:[
+        {n:"Elíptica suave", s:"8 min · nivel 3", t:"C"},
+      ]},
+      { label:"Espalda", cls:"sl-blue", items:[
+        {n:"Jalón al pecho agarre ancho", s:"4 × 8–10", t:"H"},
+        {n:"Remo con barra o en máquina", s:"4 × 8–10", t:"H"},
+        {n:"Remo con mancuerna a una mano", s:"3 × 10–12 c/lado", t:"H"},
+        {n:"Pull-over en polea", s:"3 × 12", t:"L"},
+      ]},
+      { label:"Bíceps", cls:"sl-blue", items:[
+        {n:"Curl con barra EZ", s:"3 × 10–12", t:"L"},
+        {n:"Curl martillo con mancuernas", s:"3 × 12", t:"L"},
+      ]},
+    ]},
+    { label:"Tarde — Piernas + Core", time:"~1.5–2 h · tarde", type:"tarde", sections:[
+      { label:"Calentamiento · 5 min", cls:"sl-gray", items:[
+        {n:"Movilidad de cadera y rodillas", s:"5 min", t:"B"},
+      ]},
+      { label:"Piernas", cls:"sl-purple", items:[
+        {n:"Sentadilla en Smith o libre", s:"4 × 8–10", t:"H"},
+        {n:"Prensa de piernas", s:"3 × 12", t:"H"},
+        {n:"Extensión de cuádriceps", s:"3 × 12–15", t:"L"},
+        {n:"Curl de isquiotibiales acostado", s:"3 × 12", t:"L"},
+        {n:"Elevación de talones", s:"4 × 15", t:"L"},
+      ]},
+      { label:"Core", cls:"sl-purple", items:[
+        {n:"Plancha frontal", s:"3 × 40 seg", t:"B"},
+        {n:"Elevación de piernas colgado", s:"3 × 12", t:"B"},
+        {n:"Russian twist con peso", s:"3 × 20 (10 c/lado)", t:"L"},
+      ]},
+    ]},
+  ]},
+  { name:"Miércoles", sessions:[
+    { label:"Mañana — Hombros + Core", time:"6:00–7:30 am", type:"mañana", sections:[
+      { label:"Calentamiento · 8 min", cls:"sl-gray", items:[
+        {n:"Elíptica suave", s:"8 min · nivel 3", t:"C"},
+      ]},
+      { label:"Hombros", cls:"sl-blue", items:[
+        {n:"Press militar con mancuernas", s:"4 × 10–12", t:"H"},
+        {n:"Elevaciones laterales", s:"4 × 12–15", t:"L"},
+        {n:"Pájaros — deltoides posterior", s:"3 × 12–15", t:"L"},
+        {n:"Face pull en polea", s:"3 × 15", t:"L"},
+      ]},
+      { label:"Core", cls:"sl-blue", items:[
+        {n:"Crunch en máquina o cable", s:"3 × 15", t:"L"},
+        {n:"Plancha lateral", s:"3 × 30 seg c/lado", t:"B"},
+        {n:"Dead bug", s:"3 × 10 c/lado", t:"B"},
+      ]},
+    ]},
+    { label:"Tarde — Cardio puro + Abdomen", time:"~1.5 h · tarde", type:"tarde", sections:[
+      { label:"Cardio principal · 45 min", cls:"sl-green", items:[
+        {n:"Elíptica — bloques progresivos", s:"45 min total", t:"C"},
+        {n:"· 10 min nivel 5 (entrada)", s:"", t:"C"},
+        {n:"· 25 min nivel 8–9 (zona 2 alta)", s:"", t:"C"},
+        {n:"· 10 min nivel 4 (enfriamiento)", s:"", t:"C"},
+      ]},
+      { label:"Abdomen · 15 min", cls:"sl-green", items:[
+        {n:"Sit-up con peso ligero", s:"3 × 15", t:"L"},
+        {n:"Plancha con toque de hombros", s:"3 × 10 c/lado", t:"B"},
+        {n:"Tijeras", s:"3 × 20", t:"B"},
+      ]},
+    ]},
+  ]},
+  { name:"Jueves", sessions:[
+    { label:"Mañana — Glúteos + Isquiotibiales", time:"6:00–7:30 am", type:"mañana", sections:[
+      { label:"Calentamiento · 8 min", cls:"sl-gray", items:[
+        {n:"Elíptica suave + movilidad cadera", s:"8 min", t:"C"},
+      ]},
+      { label:"Glúteos + Isquios", cls:"sl-blue", items:[
+        {n:"Hip thrust con barra o máquina", s:"4 × 10–12", t:"H"},
+        {n:"Peso muerto rumano con barra", s:"4 × 8–10", t:"H"},
+        {n:"Zancadas con mancuernas", s:"3 × 10 c/pierna", t:"H"},
+        {n:"Abducción en máquina", s:"3 × 15", t:"L"},
+        {n:"Curl de isquios de pie en máquina", s:"3 × 12", t:"L"},
+      ]},
+    ]},
+    { label:"Tarde — Pecho + Bíceps (volumen)", time:"~1.5 h · tarde", type:"tarde", sections:[
+      { label:"Calentamiento · 5 min", cls:"sl-gray", items:[
+        {n:"Rotaciones de hombro + movilidad", s:"5 min", t:"B"},
+      ]},
+      { label:"Pecho — volumen", cls:"sl-purple", items:[
+        {n:"Press de banca con mancuernas", s:"3 × 12–15", t:"L"},
+        {n:"Aperturas en cable cruzado", s:"3 × 15", t:"L"},
+        {n:"Fondos en paralelas", s:"3 × 12", t:"B"},
+      ]},
+      { label:"Bíceps — volumen", cls:"sl-purple", items:[
+        {n:"Curl en banco scott", s:"3 × 12", t:"L"},
+        {n:"Curl concentrado", s:"3 × 12 c/brazo", t:"L"},
+        {n:"Curl en polea baja", s:"3 × 15", t:"L"},
+      ]},
+      { label:"Cardio suave · 10 min", cls:"sl-green", items:[
+        {n:"Elíptica — recuperación activa", s:"10 min · nivel 4", t:"C"},
+      ]},
+    ]},
+  ]},
+  { name:"Viernes", sessions:[
+    { label:"Mañana — Full body + Elíptica", time:"6:00–7:30 am", type:"mañana", sections:[
+      { label:"Calentamiento · 5 min", cls:"sl-gray", items:[
+        {n:"Elíptica suave", s:"5 min", t:"C"},
+      ]},
+      { label:"Full body — circuito", cls:"sl-blue", items:[
+        {n:"Goblet squat con mancuerna", s:"3 × 15", t:"L"},
+        {n:"Remo en polea sentado", s:"3 × 12", t:"L"},
+        {n:"Press de pecho en máquina", s:"3 × 12", t:"L"},
+        {n:"Peso muerto rumano ligero", s:"3 × 12", t:"L"},
+        {n:"Elevaciones laterales", s:"3 × 15", t:"L"},
+        {n:"Plancha frontal", s:"2 × 40 seg", t:"B"},
+      ]},
+      { label:"Cardio final · 20 min", cls:"sl-green", items:[
+        {n:"Elíptica — ritmo constante moderado", s:"20 min · nivel 6–7", t:"C"},
+      ]},
+    ]}
+  ]},
+  { name:"Sábado", sessions:[
+    { label:"Descanso activo", time:"Sin horario fijo", type:"descanso", sections:[
+      { label:"Actividad sugerida", cls:"sl-gray", items:[
+        {n:"Caminata 30–45 min al aire libre", s:"Ritmo conversacional", t:"C"},
+        {n:"Movilidad y estiramientos generales", s:"15–20 min", t:"B"},
+      ]},
+      { label:"Domingo", cls:"sl-gray", items:[
+        {n:"Descanso completo — parte esencial del proceso de pérdida de grasa", s:"", t:"B"},
+      ]},
+    ]}
+  ]},
+];
+
+const tagLabel = { H:"Peso alto", L:"Peso moderado", C:"Cardio", B:"Peso corporal" };
+const tagCls   = { H:"pt-heavy",  L:"pt-light",     C:"pt-cardio", B:"pt-body" };
+
+let activeDay=0, activeSess=0;
+
+function renderSession(){
+  const d=days[activeDay], s=d.sessions[activeSess];
+  let html=`<div class="session-header"><div class="session-title">${s.label}</div><div class="session-meta">${s.time}</div></div>`;
+  s.sections.forEach(sec=>{
+    html+=`<div class="section-block"><span class="section-label ${sec.cls}">${sec.label}</span>`;
+    sec.items.forEach(ex=>{
+      if(!ex.n.trim()){return;}
+      const tag = ex.t && ex.t!=='C' && ex.t!=='B' ? `<span class="peso-tag ${tagCls[ex.t]}">${tagLabel[ex.t]}</span>` :
+                  ex.t==='C' ? `<span class="peso-tag pt-cardio">Cardio</span>` :
+                  ex.t==='B' ? `<span class="peso-tag pt-body">Peso corporal</span>` : '';
+      html+=`<div class="ex-row"><span class="ex-name">${ex.n}</span><div class="ex-right">${ex.s?`<span class="ex-sets">${ex.s}</span>`:''} ${tag}</div></div>`;
+    });
+    html+=`</div>`;
+  });
+  html+=`<div style="height:1rem"></div>`;
+  document.getElementById('sessionCard').innerHTML=html;
+}
+
+function renderTabs(){
+  const d=days[activeDay];
+  const tabs=document.getElementById('sessionTabs');
+  if(d.sessions.length<2){ tabs.style.display='none'; return; }
+  tabs.style.display='flex';
+  tabs.innerHTML=d.sessions.map((s,i)=>{
+    const cls=i===activeSess?(s.type==='mañana'?'stab am':'stab pm'):'stab';
+    const icon=s.type==='mañana'?'☀':'🌙';
+    return `<button class="${cls}" onclick="switchSess(${i})">${icon} ${s.type==='mañana'?'Mañana':'Tarde'}</button>`;
+  }).join('');
+}
+
+function showDay(idx){
+  activeDay=idx; activeSess=0;
+  document.querySelectorAll('.day-btn').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  renderTabs(); renderSession();
+}
+function switchSess(idx){ activeSess=idx; renderTabs(); renderSession(); }
+
+showDay(0);
+</script>
+</body>
+</html>
